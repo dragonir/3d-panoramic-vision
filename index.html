@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>甄开心小镇疑云？😱</title>
+	<meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="keywords" content="meta,facebook,Mark Elliot Zuckerberg">
+  <meta name="description" content="meta,facebook,Mark Elliot Zuckerberg">
+  <meta name="apple-mobile-web-app-capable" content="yes"  />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="theme-color" content="#FFFC00">
+  <link rel="shortcut icon" href="./assets/images/logo.png">
+  <link rel="apple-touch-icon" href="./assets/images/logo.png"/>
+  <link rel="apple-touch-icon-precomposed" href="./assets/images/logo.png">
+	<link rel="Bookmark" href="./assets/images/logo.png" />
+	<link rel="Bookmark" href="./assets/images/logo.png" />
+	<link rel="stylesheet" type="text/css" href="./assets/styles/index.css" />
+	<script src="./assets/libs/three.min.js"></script>
+	<script src="./assets/libs/GLTFLoader.js"></script>
+	<script>
+	function Toast(a,b){var c=document.createElement("div");c.style.position="fixed",c.style.maxWidth="80%",c.style.color="white",c.style.fontSize="14px",c.style.boxSizing="border-box",c.style.background="rgba(0,0,0,0.76)",c.style.padding="0.8em 2.618em",c.style.top="40%",c.style.left="50%",c.style.zIndex=999999999,c.style.borderRadius="3px",c.style.opacity="0",c.innerText=a,document.body.appendChild(c),c.style.marginLeft=-(c.offsetWidth/2)+"px",c.style.marginTop=-c.offsetHeight/2+"px",setTimeout(function(){c.style.marginLeft=-(c.offsetWidth/2)+"px",c.style.marginTop=-c.offsetHeight+"px",c.style.transition="all 0.3s",c.style.opacity="1",setTimeout(function(){c.style.opacity="0",c.style.marginTop=-c.offsetHeight/2+"px",setTimeout(function(){document.body.removeChild(c)},300)},parseInt(b)||1618)},0)}
+	</script>
+</head>
+
+<body>
+<div id="container"></div>
+<h1 class="title">Where is the thief?</h1>
+<i class="logo"></i>
+<div class="mask">
+	<div class="modal">
+		<p>你是<b>「嘿嘿嘿侦探社」</b>的实习侦探 🕵️‍，接到上级指派任务，到<b>「甄开心小镇」</b>调查市民<b>「甄不戳」</b>宝石 💎 失窃案，根据线人<b>「流浪汉老石」</b>提供的线索，小偷就躲在小镇，快把他找出来，帮甄不戳寻回失窃的宝石吧！</p>
+		<button id="konwButton">知道了</button>
+	</div>
+</div>
+<script>
+	var camera, scene, renderer;
+	var raycaster = new THREE.Raycaster();
+	var outsideTextTip;
+	// 将鼠标位置
+	var mouse = new THREE.Vector2();
+	// 点击事件
+	var is_click;
+	var isUserInteracting = false, onMouseDownMouseX = 0, onMouseDownMouseY = 0, lon = 0, onMouseDownLon = 0, lat = 0, onMouseDownLat = 0, phi = 0, theta = 0;
+	// 球体网格
+	var geometry;
+	// 室外全景图材质
+	var outside, outside_low;
+	//室内全景图材质、转到室内
+	var inside, inside_low, inside_flag = false;
+	// 全景球体对象
+	var mesh;
+	// 摄像机移动参数
+	var camera_time = 0;
+	// 切换图片标志位
+	var exchange_img = false;
+	var interactMeshes = [];
+	// anchors
+	var anchorMeshes = [];
+	var murderer;
+
+	init();
+	animate();
+
+	document.getElementById('konwButton').addEventListener('click', () => {
+		document.getElementsByClassName('mask')[0].style.display = 'none';
+	});
+	document.getElementsByClassName('logo')[0].addEventListener('click', () => {
+		document.getElementsByClassName('mask')[0].style.display = 'flex';
+	})
+
+	function init() {
+		var container;
+		container = document.getElementById('container');
+		// 摄像机
+		camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+		camera.target = new THREE.Vector3(0, 0, 0);
+		scene = new THREE.Scene();
+
+		var light = new THREE.HemisphereLight(0xffffff);
+		light.position.set(0, 40, 0);
+		scene.add(light);
+		light = new THREE.DirectionalLight(0xffffff);
+		light.position.set(0, 40, -10);
+		light.castShadow = true;
+		scene.add(light);
+
+		//全景场景
+		geometry = new THREE.SphereGeometry(500, 60, 60);
+		// 按z轴翻转
+		geometry.scale(1, 1, -1);
+
+		outside_low = new THREE.MeshBasicMaterial({
+			map: new THREE.TextureLoader().load('./assets/images/outside_low.jpg')
+		});
+		inside_low = new THREE.MeshBasicMaterial({
+			map: new THREE.TextureLoader().load('./assets/images/inside_low.jpg')
+		});
+		mesh = new THREE.Mesh(geometry, outside_low);
+
+		//异步加载高清纹理图
+		new THREE.TextureLoader().load('./assets/images/outside.jpg', function (texture) {
+			outside = new THREE.MeshBasicMaterial({
+				map: texture
+			});
+			mesh.material = outside;
+		});
+		loadMarker('outside');
+		scene.add(mesh);
+		renderer = new THREE.WebGLRenderer();
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		container.appendChild(renderer.domElement);
+		document.addEventListener('mousedown', onDocumentMouseDown, false);
+		document.addEventListener('mousemove', onDocumentMouseMove, false);
+		document.addEventListener('mouseup', onDocumentMouseUp, false);
+		document.addEventListener('touchstart', onDocumentTouchDown, false);
+		document.addEventListener('touchmove', onDocumentTouchMove, false);
+		document.addEventListener('touchend', onDocumentMouseUp, false);
+		window.addEventListener('resize', onWindowResize, false);
+	}
+
+	function onWindowResize() {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+	}
+
+	function animate() {
+		requestAnimationFrame(animate);
+		update();
+		anchorMeshes.map(item => {
+			item.rotation.y += 0.02;
+		});
+	}
+
+	//捕捉鼠标
+	function update() {
+		lat = Math.max(- 85, Math.min(85, lat));
+		phi = THREE.Math.degToRad(90 - lat);
+		theta = THREE.Math.degToRad(lon);
+		camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+		camera.target.y = 500 * Math.cos(phi);
+		camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+		camera.lookAt(camera.target);
+		if (camera_time > 0 && camera_time < 50) {
+			camera.target.x = 0;
+			camera.target.y = 1;
+			camera.target.z = 24;
+			camera.lookAt(camera.target);
+			camera.fov -= 1;
+			//需要更新，不自动更新
+			camera.updateProjectionMatrix();
+			camera_time++;
+			outsideTextTip.visible = false;
+		} else if (camera_time === 50) {
+			lat = -2;
+			lon = 182;
+			camera_time = 0;
+			camera.fov = 75;
+			camera.updateProjectionMatrix();
+			mesh.material = inside_low;
+			new THREE.TextureLoader().load('./assets/images/inside.jpg', function (texture) {
+				inside = new THREE.MeshBasicMaterial({
+					map: texture
+				});
+				mesh.material = inside;
+			});
+			loadMarker('inside');
+		}
+		renderer.render(scene, camera);
+	}
+
+	function loadMarker(type) {
+		// 设置交互点
+		var interactPoints = [
+			{ name: 'point_0_outside_house', scale: 2, x: 0, y: 1.5, z: 24 },
+			{ name: 'point_1_outside_car', scale: 3, x: 40, y: 1, z: -20 },
+			{ name: 'point_2_outside_people', scale: 3, x: -20, y: 1, z: -30 },
+			{ name: 'point_3_inside_eating_room', scale: 2, x: -30, y: 1, z: 20 },
+			{ name: 'point_4_inside_bed_room', scale: 3, x: 48, y: 0, z: -20 }
+		];
+		// 移除marker
+		for (let i = scene.children.length - 1; i >= 0; i--) {
+			if(/[inside|outside]/.test(scene.children[i].name)){
+				scene.remove(scene.children[i]);
+			}
+		}
+		//创建一个canvas绘制文字
+		outsideTextTip = makeTextSprite('进入室内查找');
+		outsideTextTip.scale.set(2.2, 2.2, 2)
+		outsideTextTip.position.set(-0.35, -1, 10);
+		type === 'outside' && scene.add(outsideTextTip);
+		interactPoints = interactPoints.filter(item => item.name.includes(type));
+		// 添加问号标记点
+		var pointTexture = new THREE.TextureLoader().load('./assets/images/point.png');
+		var pointMaterial = new THREE.SpriteMaterial({ map: pointTexture });
+		interactPoints.map(item => {
+			let point = new THREE.Sprite(pointMaterial);
+			point.name = item.name;
+			point.scale.set(item.scale * 1.2, item.scale * 1.2, item.scale * 1.2);
+			point.position.set(item.x, item.y, item.z);
+			interactMeshes.push(point);
+			scene.add(point);
+		});
+		// 加载地标模型
+		var loader = new THREE.GLTFLoader();
+    loader.load('./assets/models/anchor.gltf', function (object) {
+			object.scene.traverse(child => {
+				if (child.isMesh) {
+					child.castShadow = true;
+					child.receiveShadow = true;
+					child.material.metalness = .4;
+					child.name.includes('黄') && (child.material.color = new THREE.Color(0xfffc00))
+				}
+			});
+			object.scene.rotation.y = Math.PI / 2;
+			interactPoints.map(item => {
+				let anchor = object.scene.clone();
+				anchor.position.set(item.x, item.y + 3, item.z);
+				anchor.name = item.name;
+				anchor.scale.set(item.scale * 3, item.scale * 3, item.scale * 3);
+				anchorMeshes.push(anchor);
+				scene.add(anchor);
+			})
+		});
+	}
+
+	function loadMurderer() {
+		var texture = new THREE.TextureLoader().load('./assets/models/murderer.png');
+		var material = new THREE.SpriteMaterial({ map: texture });
+		murderer = new THREE.Sprite(material);
+		murderer.name = 'murderer';
+		murderer.scale.set(12, 12, 12);
+		murderer.position.set(43, -3, -20);
+		scene.add(murderer);
+	}
+
+	function makeTextSprite(message, parameters) {
+		if (parameters === undefined) parameters = {};
+		var fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Arial";
+		var fontsize = parameters.hasOwnProperty("fontsize") ? parameters["fontsize"] : 32;
+		var borderThickness = parameters.hasOwnProperty("borderThickness") ? parameters["borderThickness"] : 4;
+		var borderColor = parameters.hasOwnProperty("borderColor") ? parameters["borderColor"] : { r: 0, g: 0, b: 0, a: 1.0 };
+		var canvas = document.createElement('canvas');
+		var context = canvas.getContext('2d');
+		context.font = fontsize + "px " + fontface;
+		var metrics = context.measureText(message);
+		var textWidth = metrics.width;
+		context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," + borderColor.b + "," + borderColor.a + ")";
+		context.lineWidth = borderThickness;
+		context.fillStyle = "#fffc00";
+		context.fillText(message, borderThickness, fontsize + borderThickness);
+		context.font = 48 + "px " + fontface;
+		var texture = new THREE.Texture(canvas);
+		texture.needsUpdate = true;
+		var spriteMaterial = new THREE.SpriteMaterial({
+			map: texture,
+			useScreenCoordinates: false
+		});
+		var sprite = new THREE.Sprite(spriteMaterial);
+		return sprite;
+	}
+
+	// 鼠标控制
+	function onDocumentMouseDown(event) {
+		event.preventDefault();
+		raycaster.setFromCamera(mouse, camera);
+		var intersects = raycaster.intersectObjects(interactMeshes);
+		if (intersects.length > 0) {
+			let name = intersects[0].object.name;
+			if (name === 'point_0_outside_house') {
+				camera_time = 1;
+			} else if (name === 'point_4_inside_bed_room') {
+				Toast('小偷就在这里', 2000);
+				loadMurderer();
+			} else {
+				Toast(`小偷不在${name.includes('car') ? '车里' : name.includes('people') ? '人群' : name.includes('eating') ? '餐厅' : '这里'}`, 2000);
+			}
+		}
+		isUserInteracting = true;
+		is_click = true;
+		onPointerDownPointerX = event.clientX;
+		onPointerDownPointerY = event.clientY;
+		onPointerDownLon = lon;
+		onPointerDownLat = lat;
+	}
+
+	function onDocumentTouchDown(event) {
+		event.preventDefault();
+		isUserInteracting = true;
+		onPointerDownPointerX = event.touches[0].pageX;
+		onPointerDownPointerY = event.touches[0].pageY;
+		onPointerDownLon = lon;
+		onPointerDownLat = lat;
+	}
+
+	function onDocumentMouseMove(event) {
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+		if (isUserInteracting === true) {
+			lon = (onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon;
+			lat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
+		}
+	}
+
+	//手机控制适配
+	function onDocumentTouchMove(event) {
+		if (isUserInteracting === true) {
+			lon = (onPointerDownPointerX - event.touches[0].pageX) * 0.1 + onPointerDownLon;
+			lat = (event.touches[0].pageY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
+		}
+	}
+
+	function onDocumentMouseUp(event) {
+		isUserInteracting = false;
+	}
+
+	function onDocumentMouseWheel(event) {
+		camera.fov += event.deltaY * 0.05;
+		camera.updateProjectionMatrix();
+	}
+</script>
+</body>
+</html>

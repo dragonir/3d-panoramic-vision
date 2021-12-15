@@ -1,0 +1,117 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #FFFC00;
+  cursor: move;
+}
+.logo {
+  display: inline-block;
+  height: 64px;
+  width: 64px;
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  background: url('../images/logo.png') no-repeat center;
+  background-size: 100% 100%;
+  cursor: pointer;
+  transition: all .5s ease-in-out;
+}
+.logo:hover {
+  transform: rotate(360deg);
+}
+.title {
+  font-size: 45px;
+  position: fixed;
+  top: 0;
+  color: #FFFFFF;
+  filter: drop-shadow(1px 1px 5px rgba(0, 0, 0, .25));
+  text-align: center;
+  width: 100%;
+}
+.title::before {
+  display: inline-block;
+  content: '';
+  width: 49px;
+  height: 36px;
+  background: url('../images/arrow.png') no-repeat center;
+  background-size: 100% 100%;
+  vertical-align: middle;
+  margin-right: 24px;
+  animation: bounceLeft 5s ease-in-out infinite;
+  animation-fill-mode: both;
+}
+.title::after {
+  display: inline-block;
+  content: '';
+  width: 49px;
+  height: 35.9px;
+  background: url('../images/arrow.png') no-repeat center;
+  background-size: 100% 100%;
+  vertical-align: middle;
+  margin-left: 36px;
+  animation: bounceRight 5s ease-in-out infinite;
+  animation-fill-mode: both;
+}
+
+@keyframes bounceLeft {
+  0% { transform: translateX(0) }
+  50% { transform: translateX(-20px) }
+  100% { transform: translateX(0) }
+}
+@keyframes bounceRight {
+  0% { transform: rotate(180deg) translateX(20px) }
+  50% { transform: rotate(180deg) translateX(0) }
+  100% { transform: rotate(180deg) translateX(20px) }
+}
+.mask {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  background: rgba(0, 0, 0, .3);
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+}
+.mask .modal {
+  width: 52%;
+  background: rgba(255, 255, 255, .5);
+  filter: drop-shadow(1px 1px 55px rgba(0, 0, 0, .25));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 auto;
+  border: 1px groove #EFEFEF;
+}
+.mask .modal p {
+  font-size: 14px;
+  line-height: 2;
+  text-align: justify;
+  text-align-last: left;
+  word-break: break-all;
+}
+.mask .modal p b {
+  color: #FFFC00;
+  text-shadow: 0px 1px 1px rgba(0, 0, 0, .25);
+  font-weight: normal;
+}
+.mask .modal button {
+  -webkit-appearance: none;
+  height: 36px;
+  width: 120px;
+  background: #FFFC00;
+  outline: none;
+  border: none;
+  border-radius: 36px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+}
+.mask .modal button:hover {
+  background: #dee758cc;
+}
