@@ -6,16 +6,16 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="keywords" content="meta,facebook,Mark Elliot Zuckerberg">
-  <meta name="description" content="meta,facebook,Mark Elliot Zuckerberg">
+  <meta name="keywords" content="three.js,3d,panoramic,vision">
+  <meta name="description" content="three.js,3d,panoramic,vision">
   <meta name="apple-mobile-web-app-capable" content="yes"  />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	<meta name="theme-color" content="#FFFC00">
-  <link rel="shortcut icon" href="./assets/images/logo.png">
-  <link rel="apple-touch-icon" href="./assets/images/logo.png"/>
-  <link rel="apple-touch-icon-precomposed" href="./assets/images/logo.png">
-	<link rel="Bookmark" href="./assets/images/logo.png" />
-	<link rel="Bookmark" href="./assets/images/logo.png" />
+  <link rel="shortcut icon" href="./assets/images/emoji_0.png">
+  <link rel="apple-touch-icon" href="./assets/images/emoji_0.png"/>
+  <link rel="apple-touch-icon-precomposed" href="./assets/images/emoji_0.png">
+	<link rel="Bookmark" href="./assets/images/emoji_0.png" />
+	<link rel="Bookmark" href="./assets/images/emoji_0.png" />
 	<link rel="stylesheet" type="text/css" href="./assets/styles/index.css" />
 	<script src="./assets/libs/three.min.js"></script>
 	<script src="./assets/libs/GLTFLoader.js"></script>
@@ -35,40 +35,25 @@
 	</div>
 </div>
 <script>
-	var camera, scene, renderer;
+	var camera, scene, renderer, light;
 	var raycaster = new THREE.Raycaster();
-	var outsideTextTip;
-	// 将鼠标位置
 	var mouse = new THREE.Vector2();
-	// 点击事件
-	var is_click;
 	var isUserInteracting = false, onMouseDownMouseX = 0, onMouseDownMouseY = 0, lon = 0, onMouseDownLon = 0, lat = 0, onMouseDownLat = 0, phi = 0, theta = 0;
 	// 球体网格
 	var geometry;
-	// 室外全景图材质
-	var outside, outside_low;
-	//室内全景图材质、转到室内
-	var inside, inside_low, inside_flag = false;
+	// 室外、室内全景图材质
+	var outside, outside_low, inside, inside_low;
 	// 全景球体对象
 	var mesh;
 	// 摄像机移动参数
 	var camera_time = 0;
-	// 切换图片标志位
-	var exchange_img = false;
 	var interactMeshes = [];
-	// anchors
 	var anchorMeshes = [];
 	var murderer;
+	var outsideTextTip;
 
 	init();
 	animate();
-
-	document.getElementById('konwButton').addEventListener('click', () => {
-		document.getElementsByClassName('mask')[0].style.display = 'none';
-	});
-	document.getElementsByClassName('logo')[0].addEventListener('click', () => {
-		document.getElementsByClassName('mask')[0].style.display = 'flex';
-	})
 
 	function init() {
 		var container;
@@ -77,20 +62,18 @@
 		camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
 		camera.target = new THREE.Vector3(0, 0, 0);
 		scene = new THREE.Scene();
-
-		var light = new THREE.HemisphereLight(0xffffff);
+		// 添加灯光
+		light = new THREE.HemisphereLight(0xffffff);
 		light.position.set(0, 40, 0);
 		scene.add(light);
 		light = new THREE.DirectionalLight(0xffffff);
 		light.position.set(0, 40, -10);
-		light.castShadow = true;
 		scene.add(light);
-
 		//全景场景
 		geometry = new THREE.SphereGeometry(500, 60, 60);
 		// 按z轴翻转
 		geometry.scale(1, 1, -1);
-
+		// 添加贴图
 		outside_low = new THREE.MeshBasicMaterial({
 			map: new THREE.TextureLoader().load('./assets/images/outside_low.jpg')
 		});
@@ -98,12 +81,9 @@
 			map: new THREE.TextureLoader().load('./assets/images/inside_low.jpg')
 		});
 		mesh = new THREE.Mesh(geometry, outside_low);
-
 		//异步加载高清纹理图
-		new THREE.TextureLoader().load('./assets/images/outside.jpg', function (texture) {
-			outside = new THREE.MeshBasicMaterial({
-				map: texture
-			});
+		new THREE.TextureLoader().load('./assets/images/outside.jpg', texture => {
+			outside = new THREE.MeshBasicMaterial({ map: texture });
 			mesh.material = outside;
 		});
 		loadMarker('outside');
@@ -119,6 +99,12 @@
 		document.addEventListener('touchmove', onDocumentTouchMove, false);
 		document.addEventListener('touchend', onDocumentMouseUp, false);
 		window.addEventListener('resize', onWindowResize, false);
+		document.getElementById('konwButton').addEventListener('click', () => {
+			document.getElementsByClassName('mask')[0].style.display = 'none';
+		});
+		document.getElementsByClassName('logo')[0].addEventListener('click', () => {
+			document.getElementsByClassName('mask')[0].style.display = 'flex';
+		});
 	}
 
 	function onWindowResize() {
@@ -150,7 +136,6 @@
 			camera.target.z = 24;
 			camera.lookAt(camera.target);
 			camera.fov -= 1;
-			//需要更新，不自动更新
 			camera.updateProjectionMatrix();
 			camera_time++;
 			outsideTextTip.visible = false;
@@ -172,8 +157,8 @@
 		renderer.render(scene, camera);
 	}
 
+	// 加载交互点
 	function loadMarker(type) {
-		// 设置交互点
 		var interactPoints = [
 			{ name: 'point_0_outside_house', scale: 2, x: 0, y: 1.5, z: 24 },
 			{ name: 'point_1_outside_car', scale: 3, x: 40, y: 1, z: -20 },
@@ -227,6 +212,7 @@
 		});
 	}
 
+	// 加载嫌疑人
 	function loadMurderer() {
 		var texture = new THREE.TextureLoader().load('./assets/models/murderer.png');
 		var material = new THREE.SpriteMaterial({ map: texture });
@@ -237,35 +223,8 @@
 		scene.add(murderer);
 	}
 
-	function makeTextSprite(message, parameters) {
-		if (parameters === undefined) parameters = {};
-		var fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Arial";
-		var fontsize = parameters.hasOwnProperty("fontsize") ? parameters["fontsize"] : 32;
-		var borderThickness = parameters.hasOwnProperty("borderThickness") ? parameters["borderThickness"] : 4;
-		var borderColor = parameters.hasOwnProperty("borderColor") ? parameters["borderColor"] : { r: 0, g: 0, b: 0, a: 1.0 };
-		var canvas = document.createElement('canvas');
-		var context = canvas.getContext('2d');
-		context.font = fontsize + "px " + fontface;
-		var metrics = context.measureText(message);
-		var textWidth = metrics.width;
-		context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," + borderColor.b + "," + borderColor.a + ")";
-		context.lineWidth = borderThickness;
-		context.fillStyle = "#fffc00";
-		context.fillText(message, borderThickness, fontsize + borderThickness);
-		context.font = 48 + "px " + fontface;
-		var texture = new THREE.Texture(canvas);
-		texture.needsUpdate = true;
-		var spriteMaterial = new THREE.SpriteMaterial({
-			map: texture,
-			useScreenCoordinates: false
-		});
-		var sprite = new THREE.Sprite(spriteMaterial);
-		return sprite;
-	}
-
 	// 鼠标控制
 	function onDocumentMouseDown(event) {
-		event.preventDefault();
 		raycaster.setFromCamera(mouse, camera);
 		var intersects = raycaster.intersectObjects(interactMeshes);
 		if (intersects.length > 0) {
@@ -280,7 +239,6 @@
 			}
 		}
 		isUserInteracting = true;
-		is_click = true;
 		onPointerDownPointerX = event.clientX;
 		onPointerDownPointerY = event.clientY;
 		onPointerDownLon = lon;
@@ -288,7 +246,6 @@
 	}
 
 	function onDocumentTouchDown(event) {
-		event.preventDefault();
 		isUserInteracting = true;
 		onPointerDownPointerX = event.touches[0].pageX;
 		onPointerDownPointerY = event.touches[0].pageY;
@@ -320,6 +277,30 @@
 	function onDocumentMouseWheel(event) {
 		camera.fov += event.deltaY * 0.05;
 		camera.updateProjectionMatrix();
+	}
+
+	// 创建文字
+	function makeTextSprite(message, parameters) {
+		if (parameters === undefined) parameters = {};
+		var fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Arial";
+		var fontsize = parameters.hasOwnProperty("fontsize") ? parameters["fontsize"] : 32;
+		var borderThickness = parameters.hasOwnProperty("borderThickness") ? parameters["borderThickness"] : 4;
+		var borderColor = parameters.hasOwnProperty("borderColor") ? parameters["borderColor"] : { r: 0, g: 0, b: 0, a: 1.0 };
+		var canvas = document.createElement('canvas');
+		var context = canvas.getContext('2d');
+		context.font = fontsize + "px " + fontface;
+		var metrics = context.measureText(message);
+		var textWidth = metrics.width;
+		context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," + borderColor.b + "," + borderColor.a + ")";
+		context.lineWidth = borderThickness;
+		context.fillStyle = "#fffc00";
+		context.fillText(message, borderThickness, fontsize + borderThickness);
+		context.font = 48 + "px " + fontface;
+		var texture = new THREE.Texture(canvas);
+		texture.needsUpdate = true;
+		var spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+		var sprite = new THREE.Sprite(spriteMaterial);
+		return sprite;
 	}
 </script>
 </body>
