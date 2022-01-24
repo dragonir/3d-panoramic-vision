@@ -1,10 +1,10 @@
-# Three.js 实现3D全景预览
+# Three.js 实现3D全景侦探小游戏 🕵️
 
 ![banner](./assets/images/banner.png)
 
 ## 背景
 
-> 你是**嘿嘿嘿侦探社**实习侦探 `🕵️`‍，接到上级指派任务，到**甄开心小镇**调查市民**甄不戳**宝石 `💎` 失窃案，根据线人**流浪汉老石**提供的线索，小偷就躲在小镇，快把他找出来，帮甄不戳寻回失窃的宝石吧！
+> 你是**嘿嘿嘿侦探社**实习侦探🕵️，接到上级指派任务，到**甄开心小镇🏠**调查市民**甄不戳👨**宝石💎失窃案，根据线人**流浪汉老石👨‍🎤**提供的线索，小偷就躲在小镇，快把他找出来，帮甄不戳寻回失窃的宝石吧！
 
 本文使用 `Three.js` `SphereGeometry` 创建 `3D` 全景图预览功能，并在全景图中添加二维 `SpriteMaterial`、`Canvas`、三维 `GLTF` 等交互点，实现具备场景切换、点击交互的侦探小游戏。
 
@@ -97,7 +97,7 @@ THREE.SphereGeometry(radius, segmentsWidth, segmentsHeight, phiStart, phiLength,
 
 `💡` 基础网格材质 `MeshBasicMaterial`
 
-球体的材质使用的是 `MeshBasicMaterial`, 它是一种非常简单的材质，这种材质不考虑场景中光照的影响。使用这种材质的网格会被渲染成简单的平面多边形，而且也可以显示几何体的线框。
+球体的材质使用的是 `MeshBasicMaterial`, 是一种简单的材质，这种材质不受场景中光照的影响。使用这种材质的网格会被渲染成简单的平面多边形，而且也可以显示几何体的线框。
 
 构造函数：
 
@@ -120,7 +120,7 @@ MeshBasicMaterial(parameters: Object)
 * `.map[Texture]`：纹理贴图。默认为 `null`。
 * `.morphTargets[Boolean]`：材质是否使用 `morphTargets`。默认值为 `false`。
 * `.reflectivity[Float]`：环境贴图对表面的影响程度，默认值为 `1`，有效范围介于 `0`（无反射）和 `1`（完全反射）之间。
-* `.refractionRatio[Float]`：空气的折射率（约为 `1`）除以材质的折射率。它与环境映射模式 `THREE.CubeRefractionMapping` 和 `THREE.EquirectangularRefractionMapping` 一起使用。折射率不应超过 `1`。默认值为 `0.98`。
+* `.refractionRatio[Float]`：折射率不应超过 `1`。默认值为 `0.98`。
 * `.specularMap[Texture]`：材质使用的高光贴图。默认值为 `null`。
 * `.wireframe[Boolean]`：将几何体渲染为线框。默认值为 `false`（即渲染为平面多边形）。
 * `.wireframeLinecap[String]`：定义线两端的外观。可选值为 `butt`，`round` 和 `square`。默认为 `round`。
@@ -152,6 +152,8 @@ TextureLoader(manager: LoadingManager)
 
 ### 添加交互点
 
+新建交互点数组，包含每个交互点的名称、缩放比例、空间坐标。
+
 ```js
 var interactPoints = [
   { name: 'point_0_outside_house', scale: 2, x: 0, y: 1.5, z: 24 },
@@ -175,7 +177,6 @@ interactPoints.map(item => {
   point.name = item.name;
   point.scale.set(item.scale * 1.2, item.scale * 1.2, item.scale * 1.2);
   point.position.set(item.x, item.y, item.z);
-  interactMeshes.push(point);
   scene.add(point);
 });
 ```
@@ -199,7 +200,7 @@ SpriteMaterial(parameters : Object)
 `.rotation[Radians]`：`sprite` 的转动，以弧度为单位。默认值为 `0`。
 `.sizeAttenuation[Boolean]`：精灵的大小是否会被相机深度衰减。（仅限透视摄像头。）默认为 `true`。
 
-使用同样的方法，加载**嫌疑人**二维图片到场景中。
+使用同样的方法，加载**嫌疑人**二维图片添加到场景中。
 
 ![murderer](./assets/images/murderer.png)
 
@@ -218,18 +219,16 @@ function loadMurderer() {
 
 #### 添加三维动态模型锚点
 
-通过加载地标锚点形状的 `gltf` 模型来实现三维动态锚点，加载 `gltf` 需要单独引入  `GLTFLoader.js`。
+通过加载地标锚点形状的 `gltf` 模型来实现三维动态锚点，加载 `gltf` 需要单独引入  `GLTFLoader.js`，地标模型使用 `Blender` 构建。
 
 ![rotate](./assets/images/rotate.gif)
 
 ```js
-// 加载地标模型
 var loader = new THREE.GLTFLoader();
-loader.load('./assets/models/anchor.gltf', function (object) {
+loader.load('./assets/models/anchor.gltf', object => {
   object.scene.traverse(child => {
     if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
+      // 修改材质样式
       child.material.metalness = .4;
       child.name.includes('黄') && (child.material.color = new THREE.Color(0xfffc00))
     }
@@ -240,7 +239,6 @@ loader.load('./assets/models/anchor.gltf', function (object) {
     anchor.position.set(item.x, item.y + 3, item.z);
     anchor.name = item.name;
     anchor.scale.set(item.scale * 3, item.scale * 3, item.scale * 3);
-    anchorMeshes.push(anchor);
     scene.add(anchor);
   })
 });
@@ -335,7 +333,6 @@ function onDocumentMouseDown(event) {
 ### 场景切换
 
 ```js
-//捕捉鼠标
 function update() {
   lat = Math.max(-85, Math.min(85, lat));
   phi = THREE.Math.degToRad(90 - lat);
@@ -360,6 +357,7 @@ function update() {
     camera.fov = 75;
     camera.updateProjectionMatrix();
     mesh.material = inside_low;
+    // 加载新的全景图场景
     new THREE.TextureLoader().load('./assets/images/inside.jpg', function (texture) {
       inside = new THREE.MeshBasicMaterial({
         map: texture
@@ -396,3 +394,5 @@ function update() {
 * [2]. [使用three.js实现炫酷的酸性风格3D页面](https://juejin.cn/post/7012996721693163528)
 
 ![emoji_1](./assets/images/emoji_1.png)
+
+> 作者：dragonir  本文地址：
